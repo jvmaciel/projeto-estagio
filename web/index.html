@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html ng-app="helloWorld">
+
+<head>
+  <title>Hello World</title>
+  <link rel="stylesheet"
+        type="text/css"
+        href="css/bootstrap/bootstrap.min.css">
+  <style>
+    .jumbotron {
+      width: 400px;
+      text-align: center;
+      margin-top: 100px;
+      margin-left: auto;
+      margin-right: auto;
+    };
+
+    h3 {
+      margin-bottom: 25px;
+    };
+
+    .table {
+      margin-top:20px;
+    };
+
+    .form-control {
+      margin-bottom: 5px;
+    };
+
+    #botao {
+      margin-top: 5px;
+    };
+  </style>
+  <script src="js/angularjs/angularjs_1.5.6_angular.min.js"></script>
+  <script>
+    angular.module("helloWorld", []);
+    angular.module("helloWorld").controller("helloWorldCtrl", function ($scope, $http) {
+
+      $scope.app = "Lista Telefonica";
+
+      $scope.contatos = [];
+
+      $scope.operadora = [];
+
+
+      $scope.message = 'Hello World';
+
+
+      $http.get('http://localhost/api/hello_world.php').success(function (response) {
+        $scope.message_php = response.message;
+      });
+
+      $http.get('http://localhost/api/hello_world.php?db=1').success(function (response) {
+        $scope.message_db = response.message;
+      });
+
+      $http.get('http://localhost/api/index.php').success(function(response) {
+        $scope.contatos = response;
+      });
+
+      $http.get('http://localhost/api/operadora.php').success(function(data) {
+        $scope.operadora = data;
+      });
+
+      $scope.adicionarContato = function (contato) {
+
+        $http.post('http://localhost/api/contato.php', contato).success(function(data) {
+          delete $scope.contato;
+          $scope.contatoForm.$setPristine();
+          $scope.contatos.push(contato);
+        });
+      };
+
+      $scope.apagaContato = function (contatos) {
+        var selecionados = contatos.filter(function(contato) {
+
+          if(contato.selecionado) return contato;
+        });
+        var idSelecionado = selecionados.map(function(contato) { return contato.id}).join(',');
+
+        $http.post('http://localhost/api/remover.php', idSelecionado).success(function(data) {
+          $scope.contatos = contatos.filter(function(contato) {
+            if(!contato.selecionado) return contato;
+            $scope.removerContato = contatos.join();
+          });
+        });
+      };
+
+    });
+  </script>
+</head>
+
+<body>
+  <div ng-controller="helloWorldCtrl">
+    <div>
+      <section class="jumbotron">
+        <h3 class="lista"
+            ng-bind="app">
+          {{app}}
+        </h3>
+        <table class="table table-striped">
+          <tr>
+            <th></th>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>Operadora</th>
+          </tr>
+          <tr ng-class="{selecionado: contato.selecionado}"
+              ng-repeat="contato in contatos">
+            <td>
+              <input type="checkbox"
+                     ng-model="contato.selecionado">
+            </td>
+            <td>{{contato.nome}}</td>
+            <td>{{contato.telefone}}</td>
+            <td>{{contato.operadora}}</td>
+          </tr>
+          </br>
+        </table>
+        <form name="contatoForm">
+          <input class="form-control"
+                 type="text"
+                 ng-model="contato.nome"
+                 ng-required="true"
+                 name="nome"
+                 placeholder="Nome">
+          <input class="form-control"
+                 type="text"
+                 ng-model="contato.telefone"
+                 ng-required="true"
+                 name="telefone"
+                 placeholder="Telefone">
+          <select class="form-control"
+                  ng-model="contato.operadora"
+                  ng-options="op.codigo as op.operadora for op in operadora">
+            <option value="">Selecione uma Operadora</option>
+          </select>
+        </form>
+        <div class="alert alert-danger" ng-show="contatoForm.nome.$invalid && contatoForm.nome.$dirty">
+          Por favor, preencha o nome!
+        </div>
+        <div class="alert alert-danger" ng-show="contatoForm.telefone.$invalid && contatoForm.telefone.$dirty">
+          Por favor, preencha o telefone!
+        </div>
+        <button id="botao"
+                class="btn btn-primary btn-block"
+                ng-click="adicionarContato(contato)"
+                ng-disabled="!contato.nome || !contato.telefone">Adicionar Contato</button>
+        <button class="btn btn-danger btn-block"
+                ng-click="apagaContato(contatos)">Apagar Contato</button>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
